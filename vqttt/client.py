@@ -68,11 +68,12 @@ class MqttClient(QThread):
     # loop_forever нужен чтобы self.terminate останавливал переподключение
     # при неверном пароле или иной ошибке.
     # connect_async+loop_start не помогут так как loop_stop может зависнуть.
+    # Но self.terminate тоже может зависнуть??? Ад.
     def run(self):
         rc = 0
         try:
-            rc = self.client.connect(self.host_ip, self.host_port, )
-            self.client.loop_forever()
+            rc = self.client.connect(self.host_ip, self.host_port)
+            self.client.loop_start()
         except Exception as e:
             print(e)
             self.disconnected.emit("Ошибки подключения {}: {}".format(rc, e))
@@ -104,7 +105,9 @@ class MqttClient(QThread):
     def on_disconnect(self, client, userdata, rc):
         self.state = MqttClient.Disconnected
         if rc != 0:
-            self.terminate()
+            self.client.loop_stop()
+            if self.isRunning():
+                self.terminate()
         if rc == 1:
             self.disconnected.emit('Соединение закрыто')
         elif rc == 5:
@@ -115,6 +118,7 @@ class MqttClient(QThread):
     def conn_success_check(self):
         if self.state != self.Connected:
             self.state = MqttClient.Disconnected
+            self.client.loop_stop()
             if self.isRunning():
                 self.disconnected.emit("Вышло время попытки подключения")
                 self.terminate()
