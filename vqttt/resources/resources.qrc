@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="/">
+      <file alias="vqttt_icon.png">vqttt_icon.png</file>
+  </qresource>
+  <qresource prefix="/ui">
+      <file alias="connection">connection.ui</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,7 @@
+**/__pycache__
+vqttt.egg-info/
+dist
+build
+venv
+
+Session.vim
