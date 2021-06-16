@@ -1,5 +1,5 @@
-from qtpy.QtCore import QFile, Qt, QTextStream
-from qtpy.QtWidgets import (QFileDialog, QInputDialog, QMainWindow, QMenuBar,
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QInputDialog, QMainWindow, QMenuBar,
                             QStatusBar, QTabWidget)
 
 from .connection_tab import ConnectionTab
@@ -9,7 +9,7 @@ from .utils import center_widget_on_screen
 class MainWindow(QMainWindow):
 
     def __init__(self, log, app):
-        self.log = log.getChild('Main')
+        self.log = log
         self.app = app
         super().__init__()
 

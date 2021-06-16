@@ -43,8 +43,7 @@ class MessageModel(QAbstractTableModel):
             elif column == 'msg':
                 result = msg.payload
         elif role == Qt.BackgroundRole:
-            column = column[0]
-            if column != 'color':
+            if column[0] != 'color':
                 return None
             if msg.topic in self.topic_colors:
                 return self.topic_colors[msg.topic]

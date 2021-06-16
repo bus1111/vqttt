@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from os.path import dirname, join
+from os.path import dirname
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.install import install
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 
 def build_qt_resources():
@@ -62,7 +62,7 @@ setup(
     url="https://github.com/bus1111/vqttt/",
 
     python_requires=">=3.5",
-    install_requires=['PyQt5;platform_system=="Darwin"',  # it's better to use distro-supplied
+    install_requires=['PyQt5;platform_system=="Darwin"',   # it's better to use distro-supplied
                       'PyQt5;platform_system=="Windows"',  # PyQt package on Linux
                       'QtPy', 'paho-mqtt'],
 
@@ -73,7 +73,6 @@ setup(
         "Environment :: Win32 (MS Windows)",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        # "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3 :: Only",
@@ -82,11 +81,6 @@ setup(
     entry_points={'console_scripts': 'vqttt=vqttt:main'},
     include_package_data=True,
     keywords=["mqtt", "gui", "qt"],
-    # license="MIT",
-    # long_description=open(join(dirname(__file__), "README.rst")).read(),
-    # package_data={"vqttt": ["styles/*", "ui/*"]}, # everything is in resources.py already
-    # data_files=[('share/applications', ['share/vqttt.desktop']),
-    #             ('share/pixmaps', ['share/vqttt.png'])],
     zip_safe=False,
     cmdclass=dict(install=CustomInstall, build_py=CustomBuild)
 )

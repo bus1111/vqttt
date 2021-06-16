@@ -7,7 +7,7 @@
 ## Установка
 ### Пересобрать ресурсы
 ```
-pyrcc5 -o vqttt/resources.py vqttt/resources/resources.qrc
+python setup.py build
 ```
 
 ### Через pip (запуск командой `vqttt`)

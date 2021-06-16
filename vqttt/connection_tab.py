@@ -132,13 +132,13 @@ class ConnectionTab(QWidget):
         username = self.usernameLine.text()
         password = self.passwordLine.text()
         client_id = self.clientIdLine.text()
-        self.client = MqttClient(ip, port, username, password, client_id, self)
+        self.client = MqttClient(ip, self.log, port, username, password, client_id, self)
         self.client.new_message.connect(self.on_message)
         self.client.connected.connect(self.connected)
         self.client.disconnected.connect(self.disconnected)
         self.connectButton.setText("Подключение...")
         self.connectButton.setEnabled(False)
-        self.client.connect()
+        self.client.connect_to_broker()
 
     def publish(self):
         if self.client is None:

@@ -16,7 +16,7 @@ def get_random_color(seed=None):
     if seed is None:
         seed = random.randint(0, 1000000)
     color = QColor()
-    color.setHsl(((seed + 4) * 33 + random.random() * 6) % 360, 100, 98)
+    color.setHsl(((seed + 6) * 33 + random.random() * 6) % 360, 100, 98)
     return color
 
 

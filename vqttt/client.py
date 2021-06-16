@@ -1,8 +1,7 @@
 import binascii
-import hashlib
 import paho.mqtt.client as mqtt
 from datetime import datetime
-from qtpy.QtCore import Signal, QThread, QTimer
+from qtpy.QtCore import Signal, QThread, QTimer, QDeadlineTimer
 
 
 class Message:
@@ -32,12 +31,13 @@ class MqttClient(QThread):
     connected = Signal()
     disconnected = Signal(str)
 
-    def __init__(self, ip, port=1883, username=None, password=None, client_id=None, parent=None):
+    def __init__(self, ip, log, port=1883, username=None, password=None, client_id=None, parent=None):
         super().__init__(parent)
         self.host_ip, self.host_port = ip, port
         self.username, self.password = username, password
         self.client_id = client_id
         self.state = MqttClient.Disconnected
+        self.log = log.getChild('Mqtt')
 
         self.client = mqtt.Client(client_id)
         self.client.on_message = self.on_message
@@ -46,8 +46,10 @@ class MqttClient(QThread):
         self.client.username_pw_set(username, password)
         self.conn_timer = None
 
-    def connect(self):
+    # Название `connect` создаёт проблемы с QObject.connect в PySide2
+    def connect_to_broker(self):
         if self.state != MqttClient.Disconnected:
+            self.log.warn("Already connected")
             return
         self.state = MqttClient.Connecting
 
@@ -65,18 +67,18 @@ class MqttClient(QThread):
         self.client.disconnect()
 
     # Нужен запуск в своём треде чтобы .connect не остановил всю программу.
-    # loop_forever нужен чтобы self.terminate останавливал переподключение
-    # при неверном пароле или иной ошибке.
     # connect_async+loop_start не помогут так как loop_stop может зависнуть.
     # Но self.terminate тоже может зависнуть??? Ад.
     def run(self):
+        self.log.debug("Starting client thread")
         rc = 0
         try:
-            rc = self.client.connect(self.host_ip, self.host_port)
+            self.client.connect(self.host_ip, self.host_port)
             self.client.loop_start()
+            self.log.debug("Client loop started, thread finished")
         except Exception as e:
-            print(e)
-            self.disconnected.emit("Ошибки подключения {}: {}".format(rc, e))
+            self.log.error("Excepting during connection: {}".format(e), exc_info=True)
+            self.disconnected.emit("Ошибка подключения (код {}): {}".format(rc, e))
             self.state = MqttClient.Disconnected
 
     def publish(self, topic, payload, qos=0, retain=False):
@@ -87,7 +89,6 @@ class MqttClient(QThread):
             msg = Message(msg)
         except Exception as e:
             print('Ошибка обработки сообщения:', e)
-        # print(msg)
         self.new_message.emit(msg)
 
     def subscribe(self, topic, qos=0):
@@ -99,15 +100,14 @@ class MqttClient(QThread):
     def on_connect(self, client, userdata, flags, rc):
         self.state = MqttClient.Connected
         if rc == 0:
-            self.conn_timer = None
             self.connected.emit()
+        else:
+            self.log.warn("Connection with non-zero rc: {}".format(rc))
 
     def on_disconnect(self, client, userdata, rc):
         self.state = MqttClient.Disconnected
         if rc != 0:
-            self.client.loop_stop()
-            if self.isRunning():
-                self.terminate()
+            self.stop_connection()
         if rc == 1:
             self.disconnected.emit('Соединение закрыто')
         elif rc == 5:
@@ -115,10 +115,26 @@ class MqttClient(QThread):
         else:
             self.disconnected.emit('')
 
-    def conn_success_check(self):
-        if self.state != self.Connected:
-            self.state = MqttClient.Disconnected
-            self.client.loop_stop()
-            if self.isRunning():
-                self.disconnected.emit("Вышло время попытки подключения")
+    # Возвращает True если было что остановить
+    def stop_connection(self):
+        self.log.debug("Stopping the connection")
+        self.client.loop_stop()
+        if self.isRunning():
+            self.log.debug("Asking thread to quit")
+            self.quit()
+            t = QDeadlineTimer()
+            t.setRemainingTime(1000)
+            if not self.wait(t):
+                self.log.warn("Thread didn't stop, terminating")
                 self.terminate()
+                self.log.debug("Thread terminated")
+            return True
+        return False
+
+    def conn_success_check(self):
+        self.log.debug("Checking connection success")
+        self.conn_timer = None
+        if self.state != self.Connected:
+            self.log.debug("Connection didn't succeed, stopping")
+            if self.stop_connection():
+                self.disconnected.emit("Вышло время попытки подключения")

@@ -14,16 +14,16 @@ if not qtpy.PYQT5 and not qtpy.PYSIDE2:
 
 
 def init_logging():
-    log = logging.getLogger('CL')
+    log = logging.getLogger('VQ')
     term_handler = logging.StreamHandler()
 
     try:
         import colorlog
         fmt = colorlog.ColoredFormatter('%(asctime)s %(log_color)s[%(name)12s:%(lineno)3s'
-                                        ' %(funcName)18s ]\t%(levelname)-.6s  %(message)s')
+                                        ' %(funcName)18s ]\t%(levelname)-.6s  %(message)s', '%H:%M:%S')
     except ImportError:
         fmt = logging.Formatter('%(asctime)s [%(name)12s:%(lineno)3s '
-                                '%(funcName)18s ]\t%(levelname)-.6s  %(message)s')
+                                '%(funcName)18s ]\t%(levelname)-.6s  %(message)s', '%H:%M:%S')
 
     term_handler.setFormatter(fmt)
     log.addHandler(term_handler)
